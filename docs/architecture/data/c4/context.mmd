@@ -1,0 +1,20 @@
+flowchart LR
+    tenant["Арендатор<br/>Ищет, бронирует, оплачивает и возвращает инструмент"]
+    owner["Владелец инструмента<br/>Публикует объявления и подтверждает брони"]
+    moderator["Модератор<br/>Проверяет объявления и разрешает споры"]
+    tutberry["TutBerry<br/>Веб-платформа аренды инструментов"]
+    gateway["Платёжный провайдер<br/>Платежи, удержание и возврат залога"]
+    email["Почтовый сервис<br/>Доставка email-уведомлений"]
+
+    tenant -->|"HTTPS: поиск, заявки, платежи, отзывы"| tutberry
+    owner -->|"HTTPS: объявления, календарь, заявки"| tutberry
+    moderator -->|"HTTPS: модерация, споры"| tutberry
+    tutberry <-->|"HTTPS API: платёжные операции и статусы"| gateway
+    tutberry -->|"HTTPS/SMTP: уведомления"| email
+
+    classDef actor fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    classDef sys fill:#ffedd5,stroke:#ea580c,color:#7c2d12
+    classDef ext fill:#f1f5f9,stroke:#64748b,color:#334155
+    class tenant,owner,moderator actor
+    class tutberry sys
+    class gateway,email ext
