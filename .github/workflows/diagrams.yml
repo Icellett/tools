@@ -28,6 +28,14 @@ jobs:
       - name: Install Mermaid CLI
         run: npm install --no-save --no-audit --no-fund @mermaid-js/mermaid-cli@11.4.0
 
+      - name: Configure Chromium for CI
+        run: |
+          cat > /tmp/mermaid-puppeteer.json <<'JSON'
+          {
+            "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+          }
+          JSON
+
       - name: Render every .mmd file
         shell: bash
         run: |
@@ -41,7 +49,7 @@ jobs:
           for file in "${files[@]}"; do
             echo "Checking $file"
             output="/tmp/tutberry-mermaid/$(printf '%s' "$file" | sha256sum | cut -c1-16).svg"
-            ./node_modules/.bin/mmdc -i "$file" -o "$output" -b transparent
+            ./node_modules/.bin/mmdc -p /tmp/mermaid-puppeteer.json -i "$file" -o "$output" -b transparent
             test -s "$output"
           done
           echo "All ${#files[@]} Mermaid diagrams rendered."
