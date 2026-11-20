@@ -1,0 +1,91 @@
+erDiagram
+    USERS {
+        uuid id PK
+        text email UK "уникальный, естественный ключ"
+        text phone UK "для связи и уведомлений"
+        text display_name
+        text role "tenant (арендатор) | owner (владелец) | platform (модератор)"
+        numeric rating "средний рейтинг пользователя"
+        bool is_verified "верификация личности"
+        timestamptz created_at
+    }
+
+    LISTINGS {
+        uuid id PK
+        uuid owner_id FK "ссылка на USERS"
+        text title
+        text description
+        text category "инструмент, техника и т.д."
+        numeric price_per_day
+        numeric deposit_amount "базовая сумма залога"
+        text status "draft | moderation | active | archived"
+        timestamptz created_at
+    }
+
+    LISTING_AVAILABILITY {
+        uuid id PK
+        uuid listing_id FK
+        date start_date
+        date end_date
+        bool is_blocked "заблокировано владельцем вручную"
+        timestamptz created_at
+    }
+
+    BOOKINGS {
+        uuid id PK
+        uuid listing_id FK
+        uuid tenant_id FK "ссылка на USERS"
+        date start_date
+        date end_date
+        numeric total_price "итоговая стоимость аренды"
+        numeric deposit_amount "рассчитанный залог"
+        text status "pending | approved | paid | active | completed | cancelled | disputed"
+        text cancel_reason "обязательна при отмене"
+        timestamptz created_at
+        timestamptz cancelled_at "null, пока бронь активна"
+    }
+
+    TRANSACTIONS {
+        uuid id PK
+        uuid booking_id FK
+        numeric amount
+        text type "rent_payment | deposit_hold | deposit_refund | payout"
+        text status "pending | success | failed | frozen"
+        text payment_gateway_id "ID транзакции в СБП/ЮKassa"
+        timestamptz created_at
+    }
+
+    MESSAGES {
+        uuid id PK
+        uuid booking_id FK
+        uuid sender_id FK "ссылка на USERS"
+        uuid receiver_id FK "ссылка на USERS"
+        text text_content
+        bool is_read
+        timestamptz created_at
+    }
+
+    REVIEWS {
+        uuid id PK
+        uuid booking_id FK
+        uuid author_id FK "кто написал отзыв"
+        uuid target_id FK "на кого написан отзыв"
+        int rating "от 1 до 5"
+        text comment
+        timestamptz created_at
+    }
+
+    USERS ||--o{ LISTINGS : "владеет инструментами"
+    USERS ||--o{ BOOKINGS : "арендует (как tenant)"
+    USERS |o--o{ BOOKINGS : "отменяет или снимает"
+    USERS ||--o{ MESSAGES : "отправляет"
+    USERS ||--o{ MESSAGES : "получает"
+    USERS ||--o{ REVIEWS : "пишет отзыв"
+    USERS ||--o{ REVIEWS : "получает отзыв"
+    
+    LISTINGS ||--o{ LISTING_AVAILABILITY : "имеет календарь"
+    LISTINGS ||--o{ BOOKINGS : "занимается бронями"
+    
+    BOOKINGS ||--o{ TRANSACTIONS : "включает финансовые операции"
+    BOOKINGS ||--o{ MESSAGES : "содержит чат"
+    BOOKINGS ||--o{ REVIEWS : "порождает отзывы"
