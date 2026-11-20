@@ -10,7 +10,7 @@ gantt
     axisFormat  %d.%m
     
     section Аналитика и Дизайн
-    Сбор требований и CJM/USM         :done,    des1, 2024-03-01, 7d
+    Сбор требований и CJM/USM         :done,    des1, 2026-23-10, 7d
     Проектирование ER-модели и API    :done,    des2, after des1, 5d
     Дизайн UI/UX (Web, Mobile)        :active,  des3, after des1, 10d
     
