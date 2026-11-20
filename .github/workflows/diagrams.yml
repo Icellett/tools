@@ -1,1 +1,47 @@
+name: Mermaid diagrams
 
+on:
+  push:
+    paths:
+      - 'docs/**/*.mmd'
+      - '.github/workflows/diagrams.yml'
+  pull_request:
+    paths:
+      - 'docs/**/*.mmd'
+      - '.github/workflows/diagrams.yml'
+  workflow_dispatch:
+
+jobs:
+  diagrams:
+    name: Render all Mermaid diagrams
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Mermaid CLI
+        run: npm install --no-save --no-audit --no-fund @mermaid-js/mermaid-cli@11.4.0
+
+      - name: Render every .mmd file
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/tutberry-mermaid
+          mapfile -d '' files < <(find docs -type f -name '*.mmd' -print0)
+          if (( ${#files[@]} == 0 )); then
+            echo "ERROR: No Mermaid diagrams found under docs/"
+            exit 1
+          fi
+          for file in "${files[@]}"; do
+            echo "Checking $file"
+            output="/tmp/tutberry-mermaid/$(printf '%s' "$file" | sha256sum | cut -c1-16).svg"
+            ./node_modules/.bin/mmdc -i "$file" -o "$output" -b transparent
+            test -s "$output"
+          done
+          echo "All ${#files[@]} Mermaid diagrams rendered."
