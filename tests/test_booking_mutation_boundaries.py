@@ -6,7 +6,11 @@ from uuid import UUID
 import pytest
 
 from tutberry.domain.booking import (
-    Booking, BookingError, BookingPrice, BookingStatus, RentalPeriod,
+    Booking,
+    BookingError,
+    BookingPrice,
+    BookingStatus,
+    RentalPeriod,
 )
 
 
@@ -14,7 +18,7 @@ def booking(status=BookingStatus.PENDING):
     return Booking(
         UUID(int=11), UUID(int=12), UUID(int=13),
         RentalPeriod(date(2030, 1, 10), date(2030, 1, 12)),
-        BookingPrice(Decimal("200"), Decimal("50")),
+        BookingPrice(Decimal(200), Decimal(50)),
         status=status,
     )
 
@@ -44,8 +48,8 @@ def test_overlap_boundary_both_directions(left, right, expected):
 
 def test_price_exact_sum_and_zero_boundaries():
     assert BookingPrice(Decimal("12.50"), Decimal("3.25")).total == Decimal("15.75")
-    assert BookingPrice(Decimal("0"), Decimal("0")).total == Decimal("0")
-    assert BookingPrice(Decimal("0"), Decimal("10")).total == Decimal("10")
+    assert BookingPrice(Decimal(0), Decimal(0)).total == Decimal(0)
+    assert BookingPrice(Decimal(0), Decimal(10)).total == Decimal(10)
 
 
 @pytest.mark.parametrize("rent,deposit", [("-0.01", "0"), ("0", "-0.01")])
@@ -130,7 +134,7 @@ def test_period_and_price_validation_messages():
     with pytest.raises(BookingError, match="Rental period end cannot precede start"):
         RentalPeriod(date(2030, 1, 11), date(2030, 1, 10))
     with pytest.raises(BookingError, match="Amounts cannot be negative"):
-        BookingPrice(Decimal("-1"), Decimal("0"))
+        BookingPrice(Decimal(-1), Decimal(0))
     with pytest.raises(BookingError, match="Cancellation reason is required"):
         booking().cancel("   ")
     with pytest.raises(
