@@ -53,3 +53,6 @@ jobs:
 
       - name: Run tests with coverage
         run: timeout --signal=TERM --kill-after=5s 60s python -m pytest tests/ --cov=tutberry --cov-report=term-missing --cov-fail-under=80 -p no:cacheprovider
+
+      - name: Detect five deliberate behavior mutations
+        run: python scripts/mutation_smoke.py
