@@ -14,15 +14,15 @@ def test_search_excludes_reserved_and_blocked_out_of_ten():
     entries = [
         ListingRecord.objects.create(
             owner_id=uuid4(), title=f"Drill {n}", category="drill",
-            location="Omsk", daily_rate=Decimal("500"), deposit=Decimal("100"),
+            location="Omsk", daily_rate=Decimal(500), deposit=Decimal(100),
             status="active",
         )
         for n in range(10)
     ]
     BookingRecord.objects.create(
         listing=entries[0], tenant_id=uuid4(), start_date=date(2030, 6, 10),
-        end_date=date(2030, 6, 12), rent=Decimal("1000"),
-        deposit=Decimal("100"), status="approved",
+        end_date=date(2030, 6, 12), rent=Decimal(1000),
+        deposit=Decimal(100), status="approved",
     )
     url = "/api/listings?start_date=2030-06-12&end_date=2030-06-13"
     response = APIClient().get(url)
@@ -42,19 +42,19 @@ def test_search_excludes_reserved_and_blocked_out_of_ten():
 def test_search_filters_category_location_price_and_status():
     ListingRecord.objects.create(
         owner_id=uuid4(), title="Affordable Drill", category="drill",
-        location="Omsk", daily_rate=Decimal("400"), deposit=Decimal("200"), status="active",
+        location="Omsk", daily_rate=Decimal(400), deposit=Decimal(200), status="active",
     )
     ListingRecord.objects.create(
         owner_id=uuid4(), title="Expensive Drill", category="drill",
-        location="Omsk", daily_rate=Decimal("900"), deposit=Decimal("100"), status="active",
+        location="Omsk", daily_rate=Decimal(900), deposit=Decimal(100), status="active",
     )
     ListingRecord.objects.create(
         owner_id=uuid4(), title="Hidden Drill", category="drill",
-        location="Omsk", daily_rate=Decimal("400"), deposit=Decimal("0"), status="draft",
+        location="Omsk", daily_rate=Decimal(400), deposit=Decimal(0), status="draft",
     )
     ListingRecord.objects.create(
         owner_id=uuid4(), title="Saw", category="saw",
-        location="Moscow", daily_rate=Decimal("400"), deposit=Decimal("0"), status="active",
+        location="Moscow", daily_rate=Decimal(400), deposit=Decimal(0), status="active",
     )
     response = APIClient().get("/api/listings", {
         "start_date": "2030-06-01", "end_date": "2030-06-02",
@@ -75,7 +75,7 @@ def test_search_invalid_inputs_and_pagination():
     for n in range(3):
         ListingRecord.objects.create(
             owner_id=uuid4(), title=f"Listing {n}", category="tool",
-            location="Omsk", daily_rate=Decimal("10"), deposit=Decimal("0"), status="active",
+            location="Omsk", daily_rate=Decimal(10), deposit=Decimal(0), status="active",
         )
     response = client.get("/api/listings?start_date=2030-06-01&end_date=2030-06-02&limit=2")
     assert response.status_code == 200
