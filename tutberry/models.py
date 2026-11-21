@@ -8,11 +8,16 @@ class ListingRecord(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner_id = models.UUIDField()
     title = models.CharField(max_length=200)
+    category = models.CharField(max_length=80, blank=True, default="")
+    location = models.CharField(max_length=120, blank=True, default="")
     daily_rate = models.DecimalField(max_digits=12, decimal_places=2)
     deposit = models.DecimalField(max_digits=12, decimal_places=2)
     status = models.CharField(max_length=20, default="draft")
 
     class Meta:
+        indexes = [
+            models.Index(fields=["status", "category", "location", "daily_rate"], name="listing_search_idx"),
+        ]
         constraints = [
             models.CheckConstraint(condition=models.Q(daily_rate__gte=0), name="listing_rate_nonnegative"),
             models.CheckConstraint(condition=models.Q(deposit__gte=0), name="listing_deposit_nonnegative"),
