@@ -3,6 +3,11 @@ name: Load smoke (manual)
 # Deliberately separate from regular CI: this checks GET /health only.
 # It does not validate NFR-01 (search at 50k listings).
 on:
+  push:
+    branches: [lab05-quality]
+    paths:
+      - '.github/workflows/load-smoke.yml'
+      - 'tests/load/**'
   workflow_dispatch:
 
 jobs:
