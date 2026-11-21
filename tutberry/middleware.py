@@ -24,3 +24,16 @@ class RequestLoggingMiddleware:
         response["X-Request-Id"] = request_id
         logger.info("request_handled", method=request.method, path=request.path, status_code=response.status_code, duration_ms=int((time.perf_counter()-start)*1000))
         return response
+
+
+class NoStoreMiddleware:
+    """Prevent caching of API responses containing user or booking data."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.path.startswith("/api/"):
+            response["Cache-Control"] = "no-store"
+        return response
