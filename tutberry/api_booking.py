@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from tutberry.adapters.django_booking import DjangoBookingRepository
+from tutberry.adapters.sql_booking import SqlBookingRepository
 from tutberry.domain.booking import BookingError
 from tutberry.models import ListingRecord
 from tutberry.services.booking_service import BookingRequest, BookingService
@@ -48,7 +48,7 @@ def create_booking(request):
         tenant_id = uuid.uuid5(uuid.NAMESPACE_URL, f"tutberry:user:{request.user.pk}")
         if listing.owner_id == tenant_id:
             return Response({"detail": "Cannot book your own listing"}, status=status.HTTP_400_BAD_REQUEST)
-        service = BookingService(DjangoBookingRepository(), UuidGenerator(), NoopNotifier())
+        service = BookingService(SqlBookingRepository(), UuidGenerator(), NoopNotifier())
         try:
             booking = service.create(
                 BookingRequest(
