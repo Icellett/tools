@@ -46,8 +46,15 @@ jobs:
       - name: Analyze booking domain mutations
         shell: bash
         run: |
-          set -o pipefail
+          set +e
           mutmut run --paths-to-mutate tutberry/domain/booking.py --runner "python -m pytest tests/test_booking_domain.py tests/test_booking_mutation_boundaries.py -q -p no:randomly" 2>&1 | tee mutation-run.log
+          result=${PIPESTATUS[0]}
+          set -e
+          if [[ "$result" != 0 && "$result" != 2 ]]; then
+            echo "Unexpected mutmut failure: $result"
+            exit "$result"
+          fi
+          python scripts/check_mutation_score.py mutation-run.log
       - name: Export mutation outcomes
         if: always()
         shell: bash
@@ -98,4 +105,5 @@ jobs:
             mutation-run.log
             mutation-results.txt
             mutation-survivors.txt
+            mutation-score.txt
           if-no-files-found: ignore
