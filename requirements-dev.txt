@@ -6,3 +6,4 @@ mypy>=1.14,<2
 PyYAML>=6,<7
 jsonschema>=4.23,<5
 pytest-cov>=6,<8
+pytest-randomly>=3.16,<5
