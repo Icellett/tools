@@ -97,3 +97,43 @@ def test_cancellation_status_matrix(status):
 def test_cancellation_rejects_blank_reason(reason):
     with pytest.raises(BookingError):
         booking().cancel(reason)
+
+
+def test_booking_status_wire_values_are_stable():
+    # These strings are persisted and returned through the API.
+    assert {status.name: status.value for status in BookingStatus} == {
+        "PENDING": "pending",
+        "APPROVED": "approved",
+        "PAID": "paid",
+        "ACTIVE": "active",
+        "COMPLETED": "completed",
+        "CANCELLED": "cancelled",
+        "DISPUTED": "disputed",
+    }
+
+
+@pytest.mark.parametrize(
+    ("operation", "status", "expected_message"),
+    [
+        ("approve", BookingStatus.APPROVED, "Only pending bookings can be approved"),
+        ("mark_paid", BookingStatus.PENDING, "Payment requires an approved booking"),
+        ("hand_over", BookingStatus.PENDING, "Handover requires confirmed payment"),
+        ("complete", BookingStatus.PENDING, "Only active bookings can be completed"),
+    ],
+)
+def test_invalid_transition_reports_specific_reason(operation, status, expected_message):
+    with pytest.raises(BookingError, match=f"^{expected_message}$"):
+        getattr(booking(status), operation)()
+
+
+def test_period_and_price_validation_messages():
+    with pytest.raises(BookingError, match="Rental period end cannot precede start"):
+        RentalPeriod(date(2030, 1, 11), date(2030, 1, 10))
+    with pytest.raises(BookingError, match="Amounts cannot be negative"):
+        BookingPrice(Decimal("-1"), Decimal("0"))
+    with pytest.raises(BookingError, match="Cancellation reason is required"):
+        booking().cancel("   ")
+    with pytest.raises(
+        BookingError, match="Booking cannot be cancelled in its current status"
+    ):
+        booking(BookingStatus.PAID).cancel("reason")
