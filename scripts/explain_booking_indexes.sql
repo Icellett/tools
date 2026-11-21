@@ -3,11 +3,16 @@
 -- These statements run in one transaction and roll back all generated rows.
 BEGIN;
 
--- Use an existing listing; generate non-overlapping single-day bookings.
--- Existing dates are avoided by choosing an isolated future window.
+-- Create a disposable listing so the benchmark works on a fresh CI database.
+INSERT INTO tutberry_listingrecord (id, owner_id, title, daily_rate, deposit, status)
+VALUES ('11111111-1111-4111-8111-111111111111',
+        '22222222-2222-4222-8222-222222222222',
+        'EXPLAIN fixture', 100.00, 0.00, 'active');
+
+-- Generate a repeatable set of cancelled bookings for one tenant.
 -- The exclusion constraint still applies to every generated row.
 WITH selected_listing AS (
-    SELECT id FROM tutberry_listingrecord ORDER BY id LIMIT 1
+    SELECT id FROM tutberry_listingrecord WHERE id = '11111111-1111-4111-8111-111111111111'
 )
 INSERT INTO tutberry_bookingrecord
     (id, listing_id, tenant_id, start_date, end_date, rent, deposit, status, cancellation_reason)
