@@ -56,3 +56,13 @@ jobs:
 
       - name: Detect five deliberate behavior mutations
         run: python scripts/mutation_smoke.py
+
+      - name: Repeat test suite five times to detect flaky failures
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            echo "::group::Repeat $attempt/5"
+            timeout --signal=TERM --kill-after=5s 60s python -m pytest tests/ -q -p no:cacheprovider
+            echo "::endgroup::"
+          done
