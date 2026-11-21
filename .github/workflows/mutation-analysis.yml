@@ -7,6 +7,7 @@ on:
     branches: [lab05-quality]
     paths:
       - '.github/workflows/mutation-analysis.yml'
+      - 'tests/test_booking_mutation_boundaries.py'
   workflow_dispatch:
 
 jobs:
@@ -61,17 +62,17 @@ jobs:
 
           report = Path("mutation-results.txt").read_text(encoding="utf-8")
           section = re.search(
-              r"Survived[^\\n]*\\([^\\n]*\\).*?----\\s+tutberry/domain/booking\\.py\\s+\\([^\\n]*\\)\\s+-----\\s*([^\\n]+)",
-              report, flags=re.DOTALL | re.IGNORECASE,
+              r"Survived[^\n]*\n-+\s+tutberry/domain/booking\.py[^\n]*\n([^\n]+)",
+              report, flags=re.IGNORECASE,
           )
           if section is None:
               with open("mutation-survivors.txt", "a", encoding="utf-8") as output:
-                  output.write("Could not parse survivor IDs; see mutation-results.txt\\n")
+                  output.write("Could not parse survivor IDs; see mutation-results.txt\n")
           else:
               ids = []
               for part in section.group(1).split(","):
                   part = part.strip()
-                  if re.fullmatch(r"\\d+-\\d+", part):
+                  if re.fullmatch(r"\d+-\d+", part):
                       lo, hi = map(int, part.split("-"))
                       ids.extend(range(lo, hi + 1))
                   elif part.isdigit():
@@ -79,13 +80,13 @@ jobs:
               with open("mutation-survivors.txt", "a", encoding="utf-8") as output:
                   for number in ids[:30]:
                       mutant = f"tutberry/domain/booking.py:{number}"
-                      output.write(f"--- {mutant} ---\\n")
+                      output.write(f"--- {mutant} ---\n")
                       result = subprocess.run(
                           ["mutmut", "show", mutant], text=True,
                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                           check=False,
                       )
-                      output.write(result.stdout + "\\n")
+                      output.write(result.stdout + "\n")
           PY
           cat mutation-survivors.txt
       - name: Upload mutation evidence
