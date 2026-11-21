@@ -40,3 +40,16 @@ jobs:
           python manage.py migrate --noinput
       - name: Run domain and PostgreSQL integration tests
         run: pytest -q
+      - name: Install PostgreSQL command line client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Compare query plans with EXPLAIN ANALYZE
+        env:
+          PGPASSWORD: tutberry
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -h localhost -U tutberry -d tutberry \\
+            -f scripts/explain_booking_indexes.sql | tee explain-booking-results.txt
+      - name: Upload EXPLAIN results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab04-explain-booking
+          path: explain-booking-results.txt
