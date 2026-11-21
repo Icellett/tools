@@ -7,7 +7,7 @@ import pytest
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 
-from tutberry.models import BookingRecord, ListingRecord
+from tutberry.models import BookingRecord, ListingAvailabilityRecord, ListingRecord
 
 
 @pytest.mark.django_db
@@ -52,3 +52,37 @@ def test_validation_and_owner_permission_problem_details():
     }, format="json")
     assert own.status_code == 403
     assert own.json()["title"] == "Forbidden"
+
+
+@pytest.mark.django_db
+def test_owner_calendar_block_rejects_overlapping_booking_but_allows_adjacent_dates():
+    user = User.objects.create_user(username="calendar-tenant", password="test-password")
+    listing = ListingRecord.objects.create(
+        owner_id=uuid.uuid4(), title="Router", daily_rate=Decimal("100"),
+        deposit=Decimal("200"), status="active",
+    )
+    ListingAvailabilityRecord.objects.create(
+        listing=listing, start_date=date(2030, 6, 10), end_date=date(2030, 6, 12),
+        is_blocked=True,
+    )
+    ListingAvailabilityRecord.objects.create(
+        listing=listing, start_date=date(2030, 6, 20), end_date=date(2030, 6, 21),
+        is_blocked=False,
+    )
+    client = APIClient()
+    client.force_authenticate(user=user)
+    def post(start, end):
+        return client.post("/api/bookings", {
+            "listing_id": str(listing.id), "start_date": start, "end_date": end,
+        }, format="json")
+
+    blocked = post("2030-06-12", "2030-06-13")
+    assert blocked.status_code == 409
+    assert blocked.json()["title"] == "Conflict"
+    assert BookingRecord.objects.count() == 0
+
+    adjacent = post("2030-06-13", "2030-06-14")
+    assert adjacent.status_code == 201
+    unblocked = post("2030-06-20", "2030-06-21")
+    assert unblocked.status_code == 201
+    assert BookingRecord.objects.count() == 2
