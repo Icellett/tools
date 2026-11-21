@@ -52,4 +52,4 @@ jobs:
         run: python -m mypy tutberry --ignore-missing-imports --no-incremental --cache-dir=/tmp/mypy_cache --exclude 'migrations/'
 
       - name: Run tests with coverage
-        run: python -m pytest tests/ --cov=tutberry --cov-report=term-missing -p no:cacheprovider
+        run: python -m pytest tests/ --cov=tutberry --cov-report=term-missing --cov-fail-under=80 -p no:cacheprovider
