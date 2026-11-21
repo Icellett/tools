@@ -46,8 +46,9 @@ jobs:
         env:
           PGPASSWORD: tutberry
         run: |
+          set -o pipefail
           psql -X -v ON_ERROR_STOP=1 -h localhost -U tutberry -d tutberry \
-            -f scripts/explain_booking_indexes.sql | tee explain-booking-results.txt
+            -f scripts/explain_booking_indexes.sql 2>&1 | tee explain-booking-results.txt
       - name: Upload EXPLAIN results
         uses: actions/upload-artifact@v4
         with:
