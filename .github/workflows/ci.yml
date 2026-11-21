@@ -57,6 +57,9 @@ jobs:
             ghcr.io/gitleaks/gitleaks:v8.24.2 detect \
             --source=/repo --no-git --redact --exit-code=1
 
+      - name: Verify Must requirement traceability
+        run: python scripts/check_traceability.py
+
       - name: Ruff lint
         run: python -m ruff check tutberry tests --no-cache --exclude tutberry/migrations --ignore EXE002,RUF012
 
