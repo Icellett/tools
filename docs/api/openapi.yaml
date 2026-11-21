@@ -17,7 +17,6 @@ paths:
         Требуется аутентификация Django/DRF. Стоимость берётся из объявления,
         не из тела запроса. Нельзя бронировать собственное объявление.
       security:
-        - sessionAuth: []
         - basicAuth: []
       requestBody:
         required: true
@@ -42,12 +41,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
+        '401':
+          description: Необходима аутентификация HTTP Basic
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '403':
-          description: Запрос без действующей аутентификации (текущее поведение DRF)
+          description: Аренда собственного объявления запрещена
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
+        '409':
+          description: Выбранные даты заняты
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '404':
           description: Активное объявление не найдено
           content:
@@ -56,10 +67,6 @@ paths:
                 $ref: '#/components/schemas/CurrentError'
 components:
   securitySchemes:
-    sessionAuth:
-      type: apiKey
-      in: cookie
-      name: sessionid
     basicAuth:
       type: http
       scheme: basic
@@ -94,9 +101,20 @@ components:
           type: string
         total:
           type: string
-    CurrentError:
+    Problem:
       type: object
-      description: Временный формат ошибки DRF; RFC 9457 ещё не реализован
+      required: [type, title, status, detail]
       properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
         detail:
           type: string
+        errors:
+          type: object
+          additionalProperties: true
+    CurrentError:
+      $ref: '#/components/schemas/Problem'
