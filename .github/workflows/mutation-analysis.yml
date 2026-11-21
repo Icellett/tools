@@ -1,8 +1,12 @@
-name: Mutation analysis (manual)
+name: Mutation analysis
 
-# Full mutation analysis is intentionally separate from normal CI:
-# every mutant triggers a test run and may take several minutes.
+# Mutation analysis is separate from normal CI; push trigger is scoped
+# to this workflow so it can run from the lab branch without merging to main.
 on:
+  push:
+    branches: [lab05-quality]
+    paths:
+      - '.github/workflows/mutation-analysis.yml'
   workflow_dispatch:
 
 jobs:
