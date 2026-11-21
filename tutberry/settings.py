@@ -1,0 +1,34 @@
+"""Validated environment-based Django settings for TutBerry."""
+import os
+from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
+import dj_database_url
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+def required(name: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise ImproperlyConfigured(f"Missing required environment variable: {name}")
+    return value
+
+SECRET_KEY = required("DJANGO_SECRET_KEY")
+DATABASE_URL = required("DATABASE_URL")
+DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
+if DATABASES["default"]["ENGINE"] != "django.db.backends.postgresql":
+    raise ImproperlyConfigured("DATABASE_URL must be PostgreSQL")
+DEBUG_VALUE = os.getenv("DJANGO_DEBUG", "false").lower()
+if DEBUG_VALUE not in {"true", "false"}:
+    raise ImproperlyConfigured("DJANGO_DEBUG must be true or false")
+DEBUG = DEBUG_VALUE == "true"
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "info").lower()
+if LOG_LEVEL not in {"debug", "info", "warning", "error"}:
+    raise ImproperlyConfigured("Invalid LOG_LEVEL")
+APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
+ROOT_URLCONF = "tutberry.urls"
+INSTALLED_APPS = ["django.contrib.auth", "django.contrib.contenttypes", "rest_framework"]
+MIDDLEWARE = ["tutberry.middleware.RequestLoggingMiddleware"]
+TEMPLATES = []
+USE_TZ = True
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
