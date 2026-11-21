@@ -35,3 +35,22 @@ class BookingRecord(models.Model):
             models.CheckConstraint(condition=models.Q(rent__gte=0), name="booking_rent_nonnegative"),
             models.CheckConstraint(condition=models.Q(deposit__gte=0), name="booking_deposit_nonnegative"),
         ]
+
+
+class ListingAvailabilityRecord(models.Model):
+    """Owner-defined calendar blocks; independent of actual bookings."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    listing = models.ForeignKey(ListingRecord, on_delete=models.CASCADE, related_name="availability_blocks")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_blocked = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(end_date__gte=models.F("start_date")),
+                name="availability_valid_period",
+            ),
+        ]
+        indexes = [models.Index(fields=["listing", "start_date"], name="availability_listing_start_idx")]
