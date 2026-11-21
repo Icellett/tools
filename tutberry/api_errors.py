@@ -39,5 +39,5 @@ def api_exception_handler(exc, context):
         detail,
         errors=data if detail == "Request validation failed" else None,
     )
-    response["Content-Type"] = "application/problem+json"
+    response.content_type = "application/problem+json"
     return response
