@@ -96,3 +96,22 @@ class ReviewRecord(models.Model):
             models.CheckConstraint(condition=models.Q(rating__gte=1, rating__lte=5), name="review_rating_1_to_5"),
             models.UniqueConstraint(fields=["booking", "author_id"], name="review_unique_booking_author"),
         ]
+
+
+class UserProfileRecord(models.Model):
+    """Optional profile extension of Django authentication user (expand phase)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField("auth.User", on_delete=models.CASCADE, related_name="tutberry_profile")
+    display_name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=32, blank=True)
+    role = models.CharField(max_length=20, default="tenant")
+    is_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(role__in=["tenant", "owner", "platform"]),
+                name="profile_valid_role",
+            ),
+        ]
