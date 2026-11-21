@@ -12,7 +12,7 @@ WITH selected_listing AS (
 INSERT INTO tutberry_bookingrecord
     (id, listing_id, tenant_id, start_date, end_date, rent, deposit, status, cancellation_reason)
 SELECT
-    gen_random_uuid(), selected_listing.id, gen_random_uuid(),
+    gen_random_uuid(), selected_listing.id, '00000000-0000-0000-0000-000000000001'::uuid,
     DATE '2100-01-01' + i,
     DATE '2100-01-01' + i,
     100.00, 0.00, 'cancelled', NULL
