@@ -29,6 +29,17 @@ APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
 ROOT_URLCONF = "tutberry.urls"
 INSTALLED_APPS = ["django.contrib.auth", "django.contrib.contenttypes", "rest_framework", "tutberry"]
 MIDDLEWARE = ["tutberry.middleware.RequestLoggingMiddleware"]
-TEMPLATES = []
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {"context_processors": [
+            "django.template.context_processors.debug",
+            "django.template.context_processors.request",
+            "django.contrib.auth.context_processors.auth",
+        ]},
+    }
+]
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
