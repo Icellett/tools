@@ -29,7 +29,14 @@ if LOG_LEVEL not in {"debug", "info", "warning", "error"}:
 APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
 ROOT_URLCONF = "tutberry.urls"
 INSTALLED_APPS = ["django.contrib.auth", "django.contrib.contenttypes", "rest_framework", "tutberry"]
-MIDDLEWARE = ["tutberry.middleware.RequestLoggingMiddleware"]
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "tutberry.middleware.NoStoreMiddleware",
+    "tutberry.middleware.RequestLoggingMiddleware",
+]
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
