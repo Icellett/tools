@@ -1,0 +1,26 @@
+"""JSON request logs with correlation identifiers."""
+import time
+import uuid
+import structlog
+from django.conf import settings
+
+structlog.configure(processors=[structlog.contextvars.merge_contextvars, structlog.processors.add_log_level, structlog.processors.TimeStamper(fmt="iso", utc=True), structlog.processors.JSONRenderer()], logger_factory=structlog.PrintLoggerFactory(), cache_logger_on_first_use=True)
+logger = structlog.get_logger()
+
+class RequestLoggingMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        structlog.contextvars.clear_contextvars()
+        request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+        start = time.perf_counter()
+        try:
+            response = self.get_response(request)
+        except Exception:
+            logger.exception("request_failed", method=request.method, path=request.path)
+            raise
+        response["X-Request-Id"] = request_id
+        logger.info("request_handled", method=request.method, path=request.path, status_code=response.status_code, duration_ms=int((time.perf_counter()-start)*1000))
+        return response

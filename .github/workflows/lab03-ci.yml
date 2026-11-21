@@ -1,0 +1,51 @@
+name: Lab 03 Django CI
+on:
+  push:
+    branches: [lab-03]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: tutberry
+          POSTGRES_PASSWORD: tutberry
+          POSTGRES_DB: tutberry
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U tutberry -d tutberry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: ci-only-secret-not-for-production
+      DATABASE_URL: postgresql://tutberry:tutberry@localhost:5432/tutberry
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Check Django configuration
+        run: python manage.py check
+      - name: Verify migrations
+        run: python manage.py makemigrations --check --dry-run
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
+      - name: Run tests
+        run: pytest -q
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build application image
+        run: docker build --tag tutberry:lab03 .
+      - name: Validate Docker Compose configuration
+        env:
+          DJANGO_SECRET_KEY: ci-only-secret-not-for-production
+          DATABASE_URL: postgresql://tutberry:tutberry@db:5432/tutberry
+        run: docker compose config --quiet

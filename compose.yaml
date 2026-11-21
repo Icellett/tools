@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    ports: ["8080:8080"]
+    environment:
+      DJANGO_SECRET_KEY: local-development-only-not-for-production
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://tutberry:tutberry@db:5432/tutberry
+      APP_VERSION: 0.1.0
+      LOG_LEVEL: info
+    command: sh -c "python manage.py migrate --noinput && gunicorn tutberry.wsgi:application --bind 0.0.0.0:8080 --access-logfile -"
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: tutberry
+      POSTGRES_PASSWORD: tutberry
+      POSTGRES_DB: tutberry
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tutberry -d tutberry"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+volumes:
+  pgdata:
