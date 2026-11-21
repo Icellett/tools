@@ -52,7 +52,7 @@ jobs:
         run: python -m mypy tutberry --ignore-missing-imports --no-incremental --cache-dir=/tmp/mypy_cache --exclude 'migrations/'
 
       - name: Run tests with coverage
-        run: timeout --signal=TERM --kill-after=5s 60s python -m pytest tests/ --cov=tutberry --cov-branch --cov-report=term-missing --cov-fail-under=70 -p no:cacheprovider
+        run: timeout --signal=TERM --kill-after=5s 60s python -m pytest tests/ --cov=tutberry --cov-branch --cov-report=term-missing --cov-fail-under=70 -p no:cacheprovider -p no:randomly
 
       - name: Detect five deliberate behavior mutations
         run: python scripts/mutation_smoke.py
@@ -63,6 +63,9 @@ jobs:
           set -euo pipefail
           for attempt in 1 2 3 4 5; do
             echo "::group::Repeat $attempt/5"
-            timeout --signal=TERM --kill-after=5s 60s python -m pytest tests/ -q -p no:cacheprovider
+            timeout --signal=TERM --kill-after=5s 60s python -m pytest tests/ -q -p no:cacheprovider -p no:randomly
             echo "::endgroup::"
           done
+
+      - name: Check test order independence with pytest-randomly
+        run: timeout --signal=TERM --kill-after=5s 60s python -m pytest tests/ -q -p no:cacheprovider -p randomly --randomly-seed=20261121
