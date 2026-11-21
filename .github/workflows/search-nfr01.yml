@@ -42,7 +42,7 @@ jobs:
       - name: Apply migrations and seed 50000 active listings
         run: |
           python manage.py migrate --noinput
-          python scripts/seed_nfr01.py
+          PYTHONPATH=. python scripts/seed_nfr01.py
       - name: Start production WSGI server
         shell: bash
         run: |
