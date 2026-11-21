@@ -18,10 +18,8 @@ def test_profile_belongs_to_django_user():
 def test_profile_role_and_unique_user_constraints():
     user = get_user_model().objects.create_user(username="profile-owner", password="test-password")
     UserProfileRecord.objects.create(user=user, display_name="Owner", role="owner")
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            UserProfileRecord.objects.create(user=user, display_name="Duplicate", role="tenant")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        UserProfileRecord.objects.create(user=user, display_name="Duplicate", role="tenant")
     other = get_user_model().objects.create_user(username="profile-invalid", password="test-password")
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            UserProfileRecord.objects.create(user=other, display_name="Invalid", role="superadmin")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        UserProfileRecord.objects.create(user=other, display_name="Invalid", role="superadmin")
