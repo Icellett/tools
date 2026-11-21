@@ -35,7 +35,7 @@ def test_search_excludes_reserved_and_blocked_out_of_ten():
         listing=entries[1], start_date=date(2030, 6, 13),
         end_date=date(2030, 6, 14), is_blocked=True,
     )
-    assert len(APIClient().get(url).json()["items"]) == 9
+    assert len(APIClient().get(url).json()["items"]) == 8
 
 
 @pytest.mark.django_db
