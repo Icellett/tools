@@ -3,9 +3,8 @@ info:
   title: TutBerry Booking API
   version: 0.1.0
   description: |
-    Начальный контракт ЛР 4Б для реализованной операции бронирования.
-    Полный перечень планируемых ресурсов находится в resources.md.
-    В текущем приложении путь /api/bookings, а не /api/v1/bookings.
+    Контракт реализованного POST /api/bookings. Остальные ресурсы
+    из resources.md пока являются проектными.
 servers:
   - url: http://localhost:8080
 paths:
@@ -14,8 +13,8 @@ paths:
       operationId: createBooking
       summary: Создать заявку на аренду инструмента
       description: |
-        Требуется аутентификация Django/DRF. Стоимость берётся из объявления,
-        не из тела запроса. Нельзя бронировать собственное объявление.
+        Требуется HTTP Basic. Стоимость рассчитывается сервером.
+        Собственное объявление бронировать нельзя.
       security:
         - basicAuth: []
       requestBody:
@@ -36,35 +35,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingCreated'
         '400':
-          description: Ошибка валидации или некорректные даты
+          description: Ошибка валидации
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
         '401':
-          description: Необходима аутентификация HTTP Basic
+          description: Необходима аутентификация
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problem'
         '403':
-          description: Аренда собственного объявления запрещена
+          description: Нельзя бронировать собственное объявление
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
-        '409':
-          description: Выбранные даты заняты бронированием или заблокированы владельцем
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem'
         '404':
           description: Активное объявление не найдено
           content:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
+        '409':
+          description: Даты заняты или заблокированы владельцем
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 components:
   securitySchemes:
     basicAuth:
@@ -73,7 +72,6 @@ components:
   schemas:
     CreateBookingRequest:
       type: object
-      description: DRF игнорирует неизвестные поля в текущей реализации
       required: [listing_id, start_date, end_date]
       properties:
         listing_id:
@@ -97,155 +95,6 @@ components:
           enum: [pending]
         rent:
           type: string
-          pattern: '^[0-9]+[.][0-9]{2}$'
-        deposit:
-          type: string
-          pattern: '^[0-9]+[.][0-9]{2}$'
-        total:
-          type: string
-          pattern: '^[0-9]+[.][0-9]{2}$'
-    Problem:
-      type: object
-      required: [type, title, status, detail]
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        errors:
-          type: object
-          additionalProperties: true
-    CurrentError:
-      $ref: '#/components/schemas/Problem'
-
-        deposit:
-          type: string
-        total:
-          type: string
-    Problem:
-      type: object
-      required: [type, title, status, detail]
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        errors:
-          type: object
-          additionalProperties: true
-    CurrentError:
-      $ref: '#/components/schemas/Problem'
-
-        total:
-          type: string
-    Problem:
-      type: object
-      required: [type, title, status, detail]
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        errors:
-          type: object
-          additionalProperties: true
-    CurrentError:
-      $ref: '#/components/schemas/Problem'
-
-        deposit:
-          type: string
-        total:
-          type: string
-    Problem:
-      type: object
-      required: [type, title, status, detail]
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        errors:
-          type: object
-          additionalProperties: true
-    CurrentError:
-      $ref: '#/components/schemas/Problem'
-
-    Problem:
-      type: object
-      required: [type, title, status, detail]
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        errors:
-          type: object
-          additionalProperties: true
-    CurrentError:
-      $ref: '#/components/schemas/Problem'
-
-        deposit:
-          type: string
-        total:
-          type: string
-    Problem:
-      type: object
-      required: [type, title, status, detail]
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        errors:
-          type: object
-          additionalProperties: true
-    CurrentError:
-      $ref: '#/components/schemas/Problem'
-
-        total:
-          type: string
-    Problem:
-      type: object
-      required: [type, title, status, detail]
-      properties:
-        type:
-          type: string
-        title:
-          type: string
-        status:
-          type: integer
-        detail:
-          type: string
-        errors:
-          type: object
-          additionalProperties: true
-    CurrentError:
-      $ref: '#/components/schemas/Problem'
-
         deposit:
           type: string
         total:
