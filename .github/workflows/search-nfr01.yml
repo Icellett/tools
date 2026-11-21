@@ -1,0 +1,76 @@
+name: NFR-01 search performance
+
+# Separate from ordinary CI because it seeds 50,000 records and loads the API.
+on:
+  push:
+    branches: [lab05-quality]
+    paths:
+      - '.github/workflows/search-nfr01.yml'
+      - 'tests/load/search-nfr01.js'
+      - 'tutberry/api_search.py'
+      - 'scripts/seed_nfr01.py'
+  workflow_dispatch:
+
+jobs:
+  search-nfr01:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: tutberry
+          POSTGRES_PASSWORD: tutberry
+          POSTGRES_DB: tutberry
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tutberry -d tutberry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: search-load-ci-only-secret
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://tutberry:tutberry@localhost:5432/tutberry
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Apply migrations and seed 50000 active listings
+        run: |
+          python manage.py migrate --noinput
+          python scripts/seed_nfr01.py
+      - name: Start production WSGI server
+        shell: bash
+        run: |
+          gunicorn tutberry.wsgi:application --bind 127.0.0.1:8080 --workers 3 --access-logfile /tmp/search-access.log --error-logfile /tmp/search-server.log &
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent 'http://127.0.0.1:8080/api/listings?start_date=2030-06-10&end_date=2030-06-12' > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/search-server.log
+          exit 1
+      - name: Run NFR-01 k6 load and export metrics
+        shell: bash
+        run: |
+          mkdir -p load-results
+          docker run --rm --network host \
+            -v "$PWD/tests/load:/scripts:ro" \
+            -v "$PWD/load-results:/results" \
+            -e BASE_URL=http://127.0.0.1:8080 \
+            grafana/k6:0.54.0 run --summary-export=/results/search-nfr01-summary.json /scripts/search-nfr01.js
+      - name: Upload NFR-01 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: search-nfr01-summary
+          path: load-results/search-nfr01-summary.json
+          if-no-files-found: ignore
+      - name: Print errors on failure
+        if: failure()
+        run: tail -60 /tmp/search-server.log || true
