@@ -54,10 +54,39 @@ jobs:
           mutmut results > mutation-results.txt 2>&1 || true
           cat mutation-results.txt
           echo '--- Surviving mutant diffs (up to 30) ---' | tee mutation-survivors.txt
-          mutmut results | grep -oE 'tutberry/domain/booking.py:[0-9]+' | head -30 | while read -r mutant; do
-            echo "--- $mutant ---" >> mutation-survivors.txt
-            mutmut show "$mutant" >> mutation-survivors.txt 2>&1 || true
-          done
+          python - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          report = Path("mutation-results.txt").read_text(encoding="utf-8")
+          section = re.search(
+              r"Survived[^\\n]*\\([^\\n]*\\).*?----\\s+tutberry/domain/booking\\.py\\s+\\([^\\n]*\\)\\s+-----\\s*([^\\n]+)",
+              report, flags=re.DOTALL | re.IGNORECASE,
+          )
+          if section is None:
+              with open("mutation-survivors.txt", "a", encoding="utf-8") as output:
+                  output.write("Could not parse survivor IDs; see mutation-results.txt\\n")
+          else:
+              ids = []
+              for part in section.group(1).split(","):
+                  part = part.strip()
+                  if re.fullmatch(r"\\d+-\\d+", part):
+                      lo, hi = map(int, part.split("-"))
+                      ids.extend(range(lo, hi + 1))
+                  elif part.isdigit():
+                      ids.append(int(part))
+              with open("mutation-survivors.txt", "a", encoding="utf-8") as output:
+                  for number in ids[:30]:
+                      mutant = f"tutberry/domain/booking.py:{number}"
+                      output.write(f"--- {mutant} ---\\n")
+                      result = subprocess.run(
+                          ["mutmut", "show", mutant], text=True,
+                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          check=False,
+                      )
+                      output.write(result.stdout + "\\n")
+          PY
           cat mutation-survivors.txt
       - name: Upload mutation evidence
         if: always()
