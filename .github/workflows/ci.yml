@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality-and-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: tutberry
+          POSTGRES_PASSWORD: tutberry
+          POSTGRES_DB: tutberry
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tutberry -d tutberry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SECRET_KEY: github-actions-ci-only-secret
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://tutberry:tutberry@localhost:5432/tutberry
+      COVERAGE_FILE: /tmp/.coverage
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install development dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: python -m ruff check tutberry tests --no-cache --exclude tutberry/migrations --ignore EXE002,RUF012
+
+      - name: Mypy type checking
+        run: python -m mypy tutberry --ignore-missing-imports --no-incremental --cache-dir=/tmp/mypy_cache --exclude 'migrations/'
+
+      - name: Run tests with coverage
+        run: python -m pytest tests/ --cov=tutberry --cov-report=term-missing -p no:cacheprovider
