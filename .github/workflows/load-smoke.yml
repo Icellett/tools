@@ -1,0 +1,60 @@
+name: Load smoke (manual)
+
+# Deliberately separate from regular CI: this checks GET /health only.
+# It does not validate NFR-01 (search at 50k listings).
+on:
+  workflow_dispatch:
+
+jobs:
+  health-load-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: tutberry
+          POSTGRES_PASSWORD: tutberry
+          POSTGRES_DB: tutberry
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tutberry -d tutberry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: load-smoke-ci-only-secret
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DATABASE_URL: postgresql://tutberry:tutberry@localhost:5432/tutberry
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
+      - name: Start application
+        shell: bash
+        run: |
+          python manage.py runserver --noreload 0.0.0.0:8080 > /tmp/tutberry-server.log 2>&1 &
+          echo $! > /tmp/tutberry-server.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/tutberry-server.log
+          exit 1
+      - name: Run k6 smoke (health endpoint)
+        run: |
+          docker run --rm --network host \
+            -v "$PWD/tests/load:/scripts:ro" \
+            -e BASE_URL=http://127.0.0.1:8080 \
+            grafana/k6:0.54.0 run /scripts/smoke.js
+      - name: Show server logs if failed
+        if: failure()
+        run: cat /tmp/tutberry-server.log || true
