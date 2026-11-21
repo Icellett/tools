@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: TutBerry Booking API
+  version: 0.1.0
+  description: |
+    Начальный контракт ЛР 4Б для реализованной операции бронирования.
+    Полный перечень планируемых ресурсов находится в resources.md.
+    В текущем приложении путь /api/bookings, а не /api/v1/bookings.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/bookings:
+    post:
+      operationId: createBooking
+      summary: Создать заявку на аренду инструмента
+      description: |
+        Требуется аутентификация Django/DRF. Стоимость берётся из объявления,
+        не из тела запроса. Нельзя бронировать собственное объявление.
+      security:
+        - sessionAuth: []
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+            example:
+              listing_id: 11111111-1111-1111-1111-111111111111
+              start_date: '2030-01-01'
+              end_date: '2030-01-03'
+      responses:
+        '201':
+          description: Заявка создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreated'
+        '400':
+          description: Ошибка данных, запрет собственной аренды или занятые даты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '403':
+          description: Запрос без действующей аутентификации (текущее поведение DRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '404':
+          description: Активное объявление не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    basicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    CreateBookingRequest:
+      type: object
+      additionalProperties: false
+      required: [listing_id, start_date, end_date]
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+    BookingCreated:
+      type: object
+      required: [id, status, rent, deposit, total]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending]
+        rent:
+          type: string
+        deposit:
+          type: string
+        total:
+          type: string
+    CurrentError:
+      type: object
+      description: Временный формат ошибки DRF; RFC 9457 ещё не реализован
+      properties:
+        detail:
+          type: string
