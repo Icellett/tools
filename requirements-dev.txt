@@ -3,3 +3,5 @@ pytest>=8,<10
 pytest-django>=4.9,<5
 ruff>=0.9,<1
 mypy>=1.14,<2
+PyYAML>=6,<7
+jsonschema>=4.23,<5

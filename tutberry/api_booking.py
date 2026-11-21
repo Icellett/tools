@@ -7,9 +7,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from tutberry.adapters.django_booking import DjangoBookingRepository
+from tutberry.adapters.sql_booking import SqlBookingRepository
+from tutberry.api_errors import problem
 from tutberry.domain.booking import BookingError
-from tutberry.models import ListingRecord
+from tutberry.models import ListingAvailabilityRecord, ListingRecord
 from tutberry.services.booking_service import BookingRequest, BookingService
 
 
@@ -42,13 +43,27 @@ def create_booking(request):
                 id=values["listing_id"], status="active"
             )
         except ListingRecord.DoesNotExist:
-            return Response({"detail": "Active listing not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(problem(404, "Not Found", "Active listing not found"), status=404, content_type="application/problem+json")
 
         # Django's integer user ID is converted into a stable domain UUID.
         tenant_id = uuid.uuid5(uuid.NAMESPACE_URL, f"tutberry:user:{request.user.pk}")
         if listing.owner_id == tenant_id:
-            return Response({"detail": "Cannot book your own listing"}, status=status.HTTP_400_BAD_REQUEST)
-        service = BookingService(DjangoBookingRepository(), UuidGenerator(), NoopNotifier())
+            return Response(problem(403, "Forbidden", "Cannot book your own listing"), status=403, content_type="application/problem+json")
+        # The listing row is locked for this transaction. Owner-side calendar
+        # writes must take the same lock to serialize changes with bookings.
+        blocked = ListingAvailabilityRecord.objects.filter(
+            listing=listing,
+            is_blocked=True,
+            start_date__lte=values["end_date"],
+            end_date__gte=values["start_date"],
+        ).exists()
+        if blocked:
+            return Response(
+                problem(409, "Conflict", "Selected dates are blocked by the owner"),
+                status=409,
+                content_type="application/problem+json",
+            )
+        service = BookingService(SqlBookingRepository(), UuidGenerator(), NoopNotifier())
         try:
             booking = service.create(
                 BookingRequest(
@@ -61,7 +76,7 @@ def create_booking(request):
                 )
             )
         except BookingError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(problem(409 if "unavailable" in str(exc).lower() else 400, "Conflict" if "unavailable" in str(exc).lower() else "Bad Request", str(exc)), status=409 if "unavailable" in str(exc).lower() else 400, content_type="application/problem+json")
 
     return Response(
         {"id": str(booking.id), "status": booking.status.value, "rent": str(booking.price.rent), "deposit": str(booking.price.deposit), "total": str(booking.price.total)},

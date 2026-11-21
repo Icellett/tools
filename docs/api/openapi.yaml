@@ -1,0 +1,118 @@
+openapi: 3.0.3
+info:
+  title: TutBerry Booking API
+  version: 0.1.0
+  description: |
+    Контракт реализованного POST /api/bookings. Остальные ресурсы
+    из resources.md пока являются проектными.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/bookings:
+    post:
+      operationId: createBooking
+      summary: Создать заявку на аренду инструмента
+      description: |
+        Требуется HTTP Basic. Стоимость рассчитывается сервером.
+        Собственное объявление бронировать нельзя.
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+            example:
+              listing_id: 11111111-1111-1111-1111-111111111111
+              start_date: '2030-01-01'
+              end_date: '2030-01-03'
+      responses:
+        '201':
+          description: Заявка создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingCreated'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '401':
+          description: Необходима аутентификация
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Нельзя бронировать собственное объявление
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '404':
+          description: Активное объявление не найдено
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/CurrentError'
+        '409':
+          description: Даты заняты или заблокированы владельцем
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    CreateBookingRequest:
+      type: object
+      required: [listing_id, start_date, end_date]
+      properties:
+        listing_id:
+          type: string
+          format: uuid
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+    BookingCreated:
+      type: object
+      required: [id, status, rent, deposit, total]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending]
+        rent:
+          type: string
+        deposit:
+          type: string
+        total:
+          type: string
+    Problem:
+      type: object
+      required: [type, title, status, detail]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        errors:
+          type: object
+          additionalProperties: true
+    CurrentError:
+      $ref: '#/components/schemas/Problem'

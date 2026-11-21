@@ -35,3 +35,83 @@ class BookingRecord(models.Model):
             models.CheckConstraint(condition=models.Q(rent__gte=0), name="booking_rent_nonnegative"),
             models.CheckConstraint(condition=models.Q(deposit__gte=0), name="booking_deposit_nonnegative"),
         ]
+
+
+class ListingAvailabilityRecord(models.Model):
+    """Owner-defined calendar blocks; independent of actual bookings."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    listing = models.ForeignKey(ListingRecord, on_delete=models.CASCADE, related_name="availability_blocks")
+    start_date = models.DateField()
+    end_date = models.DateField()
+    is_blocked = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(end_date__gte=models.F("start_date")),
+                name="availability_valid_period",
+            ),
+        ]
+        indexes = [models.Index(fields=["listing", "start_date"], name="availability_listing_start_idx")]
+
+
+class TransactionRecord(models.Model):
+    """Payment ledger metadata; no real gateway integration yet."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(BookingRecord, on_delete=models.PROTECT, related_name="transactions")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    type = models.CharField(max_length=30)
+    status = models.CharField(max_length=20, default="pending")
+    payment_gateway_id = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(amount__gte=0), name="transaction_amount_nonnegative")]
+
+
+class MessageRecord(models.Model):
+    """Booking-linked messages; user UUIDs are not yet database foreign keys."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(BookingRecord, on_delete=models.PROTECT, related_name="messages")
+    sender_id = models.UUIDField()
+    receiver_id = models.UUIDField()
+    text_content = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ReviewRecord(models.Model):
+    """One review per author per booking."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(BookingRecord, on_delete=models.PROTECT, related_name="reviews")
+    author_id = models.UUIDField()
+    target_id = models.UUIDField()
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(rating__gte=1, rating__lte=5), name="review_rating_1_to_5"),
+            models.UniqueConstraint(fields=["booking", "author_id"], name="review_unique_booking_author"),
+        ]
+
+
+class UserProfileRecord(models.Model):
+    """Optional profile extension of Django authentication user (expand phase)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField("auth.User", on_delete=models.CASCADE, related_name="tutberry_profile")
+    display_name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=32, blank=True)
+    role = models.CharField(max_length=20, default="tenant")
+    is_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(role__in=["tenant", "owner", "platform"]),
+                name="profile_valid_role",
+            ),
+        ]

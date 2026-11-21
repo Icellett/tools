@@ -1,0 +1,56 @@
+name: Lab 04 PostgreSQL and migrations
+on:
+  push:
+    branches: [lab-04]
+  pull_request:
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: tutberry
+          POSTGRES_PASSWORD: tutberry
+          POSTGRES_DB: tutberry
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U tutberry -d tutberry"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SECRET_KEY: ci-only-secret-not-for-production
+      DATABASE_URL: postgresql://tutberry:tutberry@localhost:5432/tutberry
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Check Django models
+        run: python manage.py makemigrations --check --dry-run
+      - name: Verify migration apply and rollback three times
+        run: |
+          for i in 1 2 3; do
+            python manage.py migrate --noinput
+            python manage.py migrate tutberry 0001 --noinput
+          done
+          python manage.py migrate --noinput
+      - name: Run domain and PostgreSQL integration tests
+        run: pytest -q
+      - name: Install PostgreSQL command line client
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Compare query plans with EXPLAIN ANALYZE
+        env:
+          PGPASSWORD: tutberry
+        run: |
+          set -o pipefail
+          psql -X -v ON_ERROR_STOP=1 -h localhost -U tutberry -d tutberry \
+            -f scripts/explain_booking_indexes.sql 2>&1 | tee explain-booking-results.txt
+      - name: Upload EXPLAIN results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab04-explain-booking
+          path: explain-booking-results.txt
