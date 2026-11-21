@@ -59,18 +59,19 @@ jobs:
         shell: bash
         run: |
           mkdir -p load-results
-          docker run --rm --network host \
+          docker run --rm --network host --user "$(id -u):$(id -g)" \
             -v "$PWD/tests/load:/scripts:ro" \
             -v "$PWD/load-results:/results" \
             -e BASE_URL=http://127.0.0.1:8080 \
             grafana/k6:0.54.0 run --summary-export=/results/search-nfr01-summary.json /scripts/search-nfr01.js
+          test -s load-results/search-nfr01-summary.json
       - name: Upload NFR-01 evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: search-nfr01-summary
           path: load-results/search-nfr01-summary.json
-          if-no-files-found: ignore
+          if-no-files-found: error
       - name: Print errors on failure
         if: failure()
         run: tail -60 /tmp/search-server.log || true
