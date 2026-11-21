@@ -27,7 +27,7 @@ if LOG_LEVEL not in {"debug", "info", "warning", "error"}:
     raise ImproperlyConfigured("Invalid LOG_LEVEL")
 APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
 ROOT_URLCONF = "tutberry.urls"
-INSTALLED_APPS = ["django.contrib.auth", "django.contrib.contenttypes", "rest_framework"]
+INSTALLED_APPS = ["django.contrib.auth", "django.contrib.contenttypes", "rest_framework", "tutberry"]
 MIDDLEWARE = ["tutberry.middleware.RequestLoggingMiddleware"]
 TEMPLATES = []
 USE_TZ = True
