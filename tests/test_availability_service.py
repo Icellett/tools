@@ -4,25 +4,28 @@ from decimal import Decimal
 from uuid import uuid4
 
 import pytest
+from django.db import transaction
 
-from tutberry.models import ListingAvailabilityRecord, ListingRecord
-from tutberry.services.availability_service import AvailabilityConflict, set_listing_block
 from tutberry.adapters.sql_booking import SqlBookingRepository
 from tutberry.domain.booking import Booking, BookingPrice, RentalPeriod
-from django.db import transaction
+from tutberry.models import ListingAvailabilityRecord, ListingRecord
+from tutberry.services.availability_service import (
+    AvailabilityConflict,
+    set_listing_block,
+)
 
 
 @pytest.mark.django_db(transaction=True)
 def test_owner_block_cannot_overlap_existing_booking():
     owner_id = uuid4()
     listing = ListingRecord.objects.create(
-        owner_id=owner_id, title="Drill", daily_rate=Decimal("100"),
-        deposit=Decimal("200"), status="active",
+        owner_id=owner_id, title="Drill", daily_rate=Decimal(100),
+        deposit=Decimal(200), status="active",
     )
     booking = Booking(
         uuid4(), listing.id, uuid4(),
         RentalPeriod(date(2030, 7, 10), date(2030, 7, 12)),
-        BookingPrice(Decimal("300"), Decimal("200")),
+        BookingPrice(Decimal(300), Decimal(200)),
     )
     with transaction.atomic():
         SqlBookingRepository().add(booking)

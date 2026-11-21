@@ -1,8 +1,8 @@
 """JSON request logs with correlation identifiers."""
 import time
 import uuid
+
 import structlog
-from django.conf import settings
 
 structlog.configure(processors=[structlog.contextvars.merge_contextvars, structlog.processors.add_log_level, structlog.processors.TimeStamper(fmt="iso", utc=True), structlog.processors.JSONRenderer()], logger_factory=structlog.PrintLoggerFactory(), cache_logger_on_first_use=True)
 logger = structlog.get_logger()

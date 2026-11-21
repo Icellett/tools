@@ -6,7 +6,13 @@ from uuid import uuid4
 import pytest
 from django.db import IntegrityError, transaction
 
-from tutberry.models import BookingRecord, ListingRecord, MessageRecord, ReviewRecord, TransactionRecord
+from tutberry.models import (
+    BookingRecord,
+    ListingRecord,
+    MessageRecord,
+    ReviewRecord,
+    TransactionRecord,
+)
 
 
 @pytest.fixture
@@ -16,13 +22,13 @@ def booking(db):
     )
     return BookingRecord.objects.create(
         listing=listing, tenant_id=uuid4(), start_date=date(2030, 8, 1),
-        end_date=date(2030, 8, 2), rent=Decimal("200"), deposit=Decimal("200"),
+        end_date=date(2030, 8, 2), rent=Decimal(200), deposit=Decimal(200),
     )
 
 
 def test_related_records_round_trip(booking):
     payment = TransactionRecord.objects.create(
-        booking=booking, amount=Decimal("200"), type="rent_payment",
+        booking=booking, amount=Decimal(200), type="rent_payment",
     )
     message = MessageRecord.objects.create(
         booking=booking, sender_id=uuid4(), receiver_id=uuid4(), text_content="Hello",
@@ -39,7 +45,7 @@ def test_related_records_round_trip(booking):
 def test_database_rejects_invalid_payment_and_review(booking):
     with pytest.raises(IntegrityError), transaction.atomic():
         TransactionRecord.objects.create(
-            booking=booking, amount=Decimal("-1"), type="rent_payment",
+            booking=booking, amount=Decimal(-1), type="rent_payment",
         )
     with pytest.raises(IntegrityError), transaction.atomic():
         ReviewRecord.objects.create(

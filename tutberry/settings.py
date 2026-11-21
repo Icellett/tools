@@ -1,8 +1,9 @@
 """Validated environment-based Django settings for TutBerry."""
 import os
 from pathlib import Path
-from django.core.exceptions import ImproperlyConfigured
+
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

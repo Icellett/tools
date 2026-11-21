@@ -1,5 +1,6 @@
 """Persistence models. Domain rules live in tutberry.domain."""
 import uuid
+
 from django.db import models
 
 

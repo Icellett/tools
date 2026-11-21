@@ -26,10 +26,10 @@ def test_booking_created_with_fixed_price_and_notification():
     repository = InMemoryBookingRepository()
     notifier = SpyNotifier()
     service = BookingService(repository, FixedIds(), notifier)
-    request = BookingRequest(UUID(int=1), UUID(int=2), date(2030, 1, 1), date(2030, 1, 3), Decimal('500'), Decimal('2000'))
+    request = BookingRequest(UUID(int=1), UUID(int=2), date(2030, 1, 1), date(2030, 1, 3), Decimal(500), Decimal(2000))
     booking = service.create(request)
-    assert booking.price.rent == Decimal('1500')
-    assert booking.price.total == Decimal('3500')
+    assert booking.price.rent == Decimal(1500)
+    assert booking.price.total == Decimal(3500)
     assert len(repository.bookings) == 1
     assert notifier.sent == [booking.id]
     with pytest.raises(BookingError, match='unavailable'):

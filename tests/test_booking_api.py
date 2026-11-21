@@ -14,7 +14,7 @@ from tutberry.models import BookingRecord, ListingAvailabilityRecord, ListingRec
 def test_authenticated_booking_and_overlap():
     user = User.objects.create_user(username="tenant", password="test-password")
     listing = ListingRecord.objects.create(
-        owner_id=uuid.uuid4(), title="Drill", daily_rate=Decimal("500"), deposit=Decimal("2000"), status="active"
+        owner_id=uuid.uuid4(), title="Drill", daily_rate=Decimal(500), deposit=Decimal(2000), status="active"
     )
     client = APIClient()
     unauthorized = client.post("/api/bookings", {})
@@ -37,8 +37,8 @@ def test_validation_and_owner_permission_problem_details():
     user = User.objects.create_user(username="owner", password="test-password")
     owner_uuid = uuid.uuid5(uuid.NAMESPACE_URL, f"tutberry:user:{user.pk}")
     listing = ListingRecord.objects.create(
-        owner_id=owner_uuid, title="Saw", daily_rate=Decimal("300"),
-        deposit=Decimal("1000"), status="active",
+        owner_id=owner_uuid, title="Saw", daily_rate=Decimal(300),
+        deposit=Decimal(1000), status="active",
     )
     client = APIClient()
     client.force_authenticate(user=user)
@@ -58,8 +58,8 @@ def test_validation_and_owner_permission_problem_details():
 def test_owner_calendar_block_rejects_overlapping_booking_but_allows_adjacent_dates():
     user = User.objects.create_user(username="calendar-tenant", password="test-password")
     listing = ListingRecord.objects.create(
-        owner_id=uuid.uuid4(), title="Router", daily_rate=Decimal("100"),
-        deposit=Decimal("200"), status="active",
+        owner_id=uuid.uuid4(), title="Router", daily_rate=Decimal(100),
+        deposit=Decimal(200), status="active",
     )
     ListingAvailabilityRecord.objects.create(
         listing=listing, start_date=date(2030, 6, 10), end_date=date(2030, 6, 12),

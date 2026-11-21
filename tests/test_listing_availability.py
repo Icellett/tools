@@ -1,5 +1,5 @@
 """PostgreSQL integration tests for the availability expand migration."""
-from datetime import date, timedelta
+from datetime import date
 from uuid import uuid4
 
 import pytest
@@ -25,8 +25,7 @@ def test_listing_availability_invalid_period_rejected_by_database():
     listing = ListingRecord.objects.create(
         owner_id=uuid4(), title="Sander", daily_rate=100, deposit=200, status="active",
     )
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            ListingAvailabilityRecord.objects.create(
-                listing=listing, start_date=date(2030, 5, 3), end_date=date(2030, 5, 1),
-            )
+    with pytest.raises(IntegrityError), transaction.atomic():
+        ListingAvailabilityRecord.objects.create(
+            listing=listing, start_date=date(2030, 5, 3), end_date=date(2030, 5, 1),
+        )

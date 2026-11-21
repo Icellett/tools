@@ -1,7 +1,7 @@
 """Contract tests for the currently implemented booking endpoint."""
-from pathlib import Path
 import uuid
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 import yaml
@@ -10,7 +10,6 @@ from jsonschema import Draft4Validator, FormatChecker
 from rest_framework.test import APIClient
 
 from tutberry.models import ListingRecord
-
 
 SPEC = yaml.safe_load(
     (Path(__file__).resolve().parents[1] / "docs/api/openapi.yaml").read_text(encoding="utf-8")
@@ -48,8 +47,8 @@ def test_openapi_structure_and_security():
 def test_booking_contract_success_authentication_and_conflict():
     user = User.objects.create_user(username="contract-tenant", password="secret")
     listing = ListingRecord.objects.create(
-        owner_id=uuid.uuid4(), title="Drill", daily_rate=Decimal("100"),
-        deposit=Decimal("250"), status="active",
+        owner_id=uuid.uuid4(), title="Drill", daily_rate=Decimal(100),
+        deposit=Decimal(250), status="active",
     )
     client = APIClient()
     unauthorized = client.post("/api/bookings", {}, format="json")
@@ -74,8 +73,8 @@ def test_booking_contract_validation_missing_and_ownership():
     user = User.objects.create_user(username="contract-owner", password="secret")
     owner_id = uuid.uuid5(uuid.NAMESPACE_URL, f"tutberry:user:{user.pk}")
     listing = ListingRecord.objects.create(
-        owner_id=owner_id, title="Saw", daily_rate=Decimal("100"),
-        deposit=Decimal("250"), status="active",
+        owner_id=owner_id, title="Saw", daily_rate=Decimal(100),
+        deposit=Decimal(250), status="active",
     )
     client = APIClient()
     client.force_authenticate(user=user)

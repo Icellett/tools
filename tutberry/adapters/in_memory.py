@@ -1,5 +1,6 @@
 """Test adapter; not safe for concurrent production bookings."""
 from uuid import UUID
+
 from tutberry.domain.booking import Booking, BookingStatus, RentalPeriod
 
 

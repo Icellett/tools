@@ -7,8 +7,13 @@ from uuid import UUID
 
 from django.db import IntegrityError, connection
 
-from tutberry.domain.booking import Booking, BookingError, BookingPrice, BookingStatus, RentalPeriod
-
+from tutberry.domain.booking import (
+    Booking,
+    BookingError,
+    BookingPrice,
+    BookingStatus,
+    RentalPeriod,
+)
 
 _INSERT = """
 INSERT INTO tutberry_bookingrecord
