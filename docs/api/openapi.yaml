@@ -36,9 +36,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/BookingCreated'
         '400':
-          description: Ошибка данных, запрет собственной аренды или занятые даты
+          description: Ошибка валидации или некорректные даты
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
         '401':
@@ -50,7 +50,7 @@ paths:
         '403':
           description: Аренда собственного объявления запрещена
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
         '409':
@@ -62,7 +62,7 @@ paths:
         '404':
           description: Активное объявление не найдено
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: '#/components/schemas/CurrentError'
 components:
