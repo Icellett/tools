@@ -1,6 +1,7 @@
 -- LR 4A: compare query plans on the same dataset.
 -- Run only on a disposable development/test database.
--- These statements run in one transaction and roll back all generated rows.
+-- The fixture is committed before index DDL to avoid pending FK trigger events.
+-- Use a disposable database; the fixture is removed after both measurements.
 BEGIN;
 
 -- Create a disposable listing so the benchmark works on a fresh CI database.
@@ -23,6 +24,7 @@ SELECT
     100.00, 0.00, 'cancelled', NULL
 FROM selected_listing, generate_series(0, 29999) AS i;
 
+COMMIT;
 ANALYZE tutberry_bookingrecord;
 
 -- Compare tenant query without/with the specific B-tree index.
@@ -43,4 +45,9 @@ FROM tutberry_bookingrecord
 WHERE tenant_id = '00000000-0000-0000-0000-000000000001'
 ORDER BY start_date DESC LIMIT 20;
 
-ROLLBACK;
+-- Remove benchmark rows and fixture, keeping the migration-created index.
+DELETE FROM tutberry_bookingrecord
+WHERE listing_id = '11111111-1111-4111-8111-111111111111';
+DELETE FROM tutberry_listingrecord
+WHERE id = '11111111-1111-4111-8111-111111111111';
+ANALYZE tutberry_bookingrecord;
