@@ -53,6 +53,12 @@ jobs:
         run: |
           mutmut results > mutation-results.txt 2>&1 || true
           cat mutation-results.txt
+          echo '--- Surviving mutant diffs (up to 30) ---' | tee mutation-survivors.txt
+          mutmut results | grep -oE 'tutberry/domain/booking.py:[0-9]+' | head -30 | while read -r mutant; do
+            echo "--- $mutant ---" >> mutation-survivors.txt
+            mutmut show "$mutant" >> mutation-survivors.txt 2>&1 || true
+          done
+          cat mutation-survivors.txt
       - name: Upload mutation evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -61,4 +67,5 @@ jobs:
           path: |
             mutation-run.log
             mutation-results.txt
+            mutation-survivors.txt
           if-no-files-found: ignore
