@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                     listing_id WITH =,
                     daterange(start_date, end_date + 1, '[)') WITH &&
                 )
-                WHERE (status IN ('pending', 'approved', 'paid', 'active'));
+                WHERE (status <> 'cancelled');
             """,
             reverse_sql="""
                 ALTER TABLE tutberry_bookingrecord
