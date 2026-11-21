@@ -41,12 +41,12 @@ jobs:
           python -m pip install -r requirements-dev.txt
           python -m pip install "mutmut>=2.4,<3"
       - name: Baseline domain tests
-        run: python -m pytest tests/test_booking_domain.py -q -p no:randomly
+        run: python -m pytest tests/test_booking_domain.py tests/test_booking_mutation_boundaries.py -q -p no:randomly
       - name: Analyze booking domain mutations
         shell: bash
         run: |
           set -o pipefail
-          mutmut run --paths-to-mutate tutberry/domain/booking.py --runner "python -m pytest tests/test_booking_domain.py -q -p no:randomly" 2>&1 | tee mutation-run.log
+          mutmut run --paths-to-mutate tutberry/domain/booking.py --runner "python -m pytest tests/test_booking_domain.py tests/test_booking_mutation_boundaries.py -q -p no:randomly" 2>&1 | tee mutation-run.log
       - name: Export mutation outcomes
         if: always()
         shell: bash
