@@ -37,18 +37,15 @@ def test_related_records_round_trip(booking):
 
 @pytest.mark.django_db(transaction=True)
 def test_database_rejects_invalid_payment_and_review(booking):
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            TransactionRecord.objects.create(
-                booking=booking, amount=Decimal("-1"), type="rent_payment",
-            )
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            ReviewRecord.objects.create(
-                booking=booking, author_id=uuid4(), target_id=uuid4(), rating=6,
-            )
+    with pytest.raises(IntegrityError), transaction.atomic():
+        TransactionRecord.objects.create(
+            booking=booking, amount=Decimal("-1"), type="rent_payment",
+        )
+    with pytest.raises(IntegrityError), transaction.atomic():
+        ReviewRecord.objects.create(
+            booking=booking, author_id=uuid4(), target_id=uuid4(), rating=6,
+        )
     author = uuid4()
     ReviewRecord.objects.create(booking=booking, author_id=author, target_id=uuid4(), rating=4)
-    with pytest.raises(IntegrityError):
-        with transaction.atomic():
-            ReviewRecord.objects.create(booking=booking, author_id=author, target_id=uuid4(), rating=5)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        ReviewRecord.objects.create(booking=booking, author_id=author, target_id=uuid4(), rating=5)
